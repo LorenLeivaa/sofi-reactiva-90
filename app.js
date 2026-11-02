@@ -169,6 +169,22 @@ async function cargarEstado() {
   } catch { pintarContador(null); }
 }
 
+/* ── El cupo se renueva cada día a las 00:00 (hora de Argentina) ──
+   Si el chat quedó abierto en el celular desde ayer, al volver se vuelve a preguntar
+   al servidor; así la casilla no queda trabada en «Mañana sigo con vos…». */
+const diaAR = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+let diaVisto = diaAR();
+function revisarDia() {
+  if (respondiendo) return;
+  diaVisto = diaAR();
+  cargarEstado();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarDia(); });
+window.addEventListener('focus', revisarDia);
+window.addEventListener('pageshow', (e) => { if (e.persisted) revisarDia(); });
+compositor.addEventListener('click', () => { if (entrada.disabled) revisarDia(); });
+setInterval(() => { if (!document.hidden && (entrada.disabled || diaAR() !== diaVisto)) revisarDia(); }, 60_000);
+
 /* ── Fotos: auf dem Handy verkleinern (max. 1024 px, JPEG) ── */
 const LADO_MAXIMO = 1024;
 
